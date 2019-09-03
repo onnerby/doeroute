@@ -1,0 +1,33 @@
+{
+  "name": "onnerby/doeroute",
+  "description": "A fast and intuitive Router",
+  "version": "0.1.0",
+  "keywords": [
+    "PHP",
+    "Router"
+  ],
+  "homepage": "https://github.com/onnerby/doeroute",
+  "type": "library",
+  "license": "LGPL-2.1-or-later",
+  "authors": [
+    {
+      "name": "Daniel Önnerby"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+    	"Doe\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Doe\\Tests\\": "tests/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8"
+  },
+  "scripts": {
+    "test": "./vendor/bin/phpunit --bootstrap vendor/autoload.php --testdox tests"
+  }
+}
