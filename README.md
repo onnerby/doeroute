@@ -7,6 +7,11 @@ The Doe\Router is a router where you build your routes using subpaths and closur
 The advantage is that the closures are only called if the subpath match which makes it SUPER FAST and easy to follow.
 It also makes it very easy to delegate specific paths to some kind of controller/action-pattern
 
+## Installation
+```
+composer require onnerby/doeroute
+```
+
 ### Basic example
 
 ```php
