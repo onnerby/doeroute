@@ -1,7 +1,6 @@
 {
   "name": "onnerby/doeroute",
   "description": "A fast and intuitive Router",
-  "version": "0.1.1",
   "keywords": [
     "PHP",
     "Router"
