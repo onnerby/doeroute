@@ -63,6 +63,9 @@ class Controller_Project
 
 		});
 
+		// Lets also map the "/project" path to the controllers "list" action
+		$router->empty('read', [$controller, 'list']);
+
 	}
 
 	private function getProject($projectId) { /* Get the project somehow */ }

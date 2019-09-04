@@ -86,6 +86,22 @@ namespace Doe
 		}
 
 		/**
+		 * Add a possible empty path to the route
+		 *
+		 * @param string|array $verbs (optional)
+		 * @param callable $callback Callback executed if path match
+		 * @return Router for chaining
+		 */
+		public function empty() : Router
+		{
+			$subpath = ':empty:';
+			$args = func_get_args();
+			$callback = array_pop($args);
+			$verbs = count($args) == 1 ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
+			return $this->path($subpath, $verbs, $callback);
+		}
+
+		/**
 		 * Add a variable path to the route
 		 *
 		 * @param string $pattern Regexp pattern
