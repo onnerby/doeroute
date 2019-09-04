@@ -68,9 +68,9 @@ namespace Doe
 		 * @param string|array $subpath exact paths
 		 * @param string|array $verbs (optional)
 		 * @param callable $callback Callback executed if path match
-		 * @return self
+		 * @return Router for chaining
 		 */
-		public function path($subpath)
+		public function path(string $subpath) : Router
 		{
 			$args = func_get_args();
 			$callback = array_pop($args);
@@ -91,8 +91,9 @@ namespace Doe
 		 * @param string $pattern Regexp pattern
 		 * @param string|array $verbs (optional)
 		 * @param callable $callback Callback executed if path match
+		 * @return Router for chaining
 		 */
-		public function pathVariable($pattern)
+		public function pathVariable(string $pattern) : Router
 		{
 			$args = func_get_args();
 			$callback = array_pop($args);
@@ -119,12 +120,14 @@ namespace Doe
 		 * @param callable[] $before Filters to run before routes
 		 * @param callable[] $after Filters to run after routes
 		 * @param callable $callback Add your routes in this callback
+		 * @return Router for chaining
 		 */
-		public function filter($before, $after, $callback)
+		public function filter($before, $after, $callback) : Router
 		{
 			$this->filterContextStack[] = [$before, $after];
 			call_user_func($callback, $this);
 			array_pop($this->filterContextStack);
+			return $this;
 		}
 
 		/**
@@ -132,7 +135,7 @@ namespace Doe
 		 *
 		 * @return array
 		 */
-		private function collectFilters()
+		private function collectFilters() : array
 		{
 			$out = [[], []];
 			foreach ($this->filterContextStack as $context) {
@@ -182,9 +185,9 @@ namespace Doe
 		 *
 		 * @param string $verb
 		 * @param string $path
-		 * @return mixed
+		 * @return string
 		 */
-		public function route($verb, $path)
+		public function route(string $verb, string $path) : string
 		{
 			$fullpath = explode('/', trim($path, '/'));
 			$variables = [$this];
