@@ -194,10 +194,7 @@ namespace Doe
 
 			foreach ($fullpath as $subpath) {
 
-				if (isset($this->subpaths[$subpath])) {
-					// Check for subpaths
-					$route = $this->subpaths[$subpath];
-
+				if ($route = $this->subpaths[$subpath] ?? null) {
 					if ($result = $this->callRoute($route, $verb, $variables)) {
 						return $result;
 					}
@@ -221,8 +218,8 @@ namespace Doe
 			}
 
 			// Path is empty, but there may still be ":empty:" paths
-			if (isset($this->subpaths[':empty:'])) {
-				if ($result = $this->callRoute($this->subpaths[':empty:'], $verb, $variables)) {
+			if ($route = $this->subpaths[':empty:'] ?? null) {
+				if ($result = $this->callRoute($route, $verb, $variables)) {
 					return $result;
 				}
 			}
