@@ -79,7 +79,7 @@ final class PathVariableTest extends TestCase
 				$router->pathVariable('/^secondpath([0-9]+)$/', function ($router, $var1, $var2) {
 					return 'secondpath' . $var1 . "x" . $var2;
 				});
-				$router->path(':empty:', function ($router, $var1) {
+				$router->pathEmpty(function ($router, $var1) {
 					return 'emptypath' . $var1;
 				});
 			});

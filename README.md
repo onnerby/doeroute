@@ -15,20 +15,23 @@ composer require onnerby/doeroute
 ### Basic example
 
 ```php
-$router = new \Doe\Router(['create', 'read', 'update', 'delete']);
+$router = new \Doe\Router(['get', 'post']);
 $router->path('blog', function($router) {
-	$router->path('list', 'read', function ($router) {
+	$router->path('list', 'get', function ($router) {
+		// This is returned when route goes to "/blog/list"
 		return "List of all posts";
 	});
-	$router->path('tags', 'read', function ($router) {
+	$router->path('tags', 'get', function ($router) {
+		// This is returned when route goes to "/blog/tags"
 		return "List of all tags";
 	});
 	$router->pathVariable('/^([0-9]+)$/', function ($router, $postId) {
+		// This is returned when route goes to something like "/blog/1234"
 		return "Post " . $postId;
 	});
 });
 
-$verb = $_SERVER['REQUEST_METHOD'] == 'GET' ? 'read' : 'update'; // probably more complicated ;)
+$verb = $_SERVER['REQUEST_METHOD'] == 'GET' ? 'get' : 'post'; // probably more complicated ;)
 $path = $_SERVER['DOCUMENT_URI'];
 echo $router->route($verb, $path);
 
@@ -38,7 +41,7 @@ echo $router->route($verb, $path);
 If you are building bigger webapps you may like to delegate routes to some kind of controller. The Doe\Router is not connected to any kind of pattern for this - but it's still super simple to delegate the route.
 ```php
 // Main app
-$router = new \Doe\Router(['create', 'read', 'update', 'delete']);
+$router = new \Doe\Router(['get', 'post']);
 $router->path('project', ['Controller_Project', 'route']);
 
 ...
@@ -51,20 +54,22 @@ class Controller_Project
 	{
 		$controller = new self;
 		
-		$router->path('list', 'read', [$controller, 'list'] );
+		$router->path('list', 'get', [$controller, 'list'] );
 
 		$router->pathVariable('/^([0-9]+)$/', function ($router, $projectId) use ($controller) {
 
 			// Any generic method needed for everything
 			$controller->getProject($projectId);	
 
-			$router->path('overview', 'read', [$controller, 'overview'] );
-			$router->path('save', 'update', [$controller, 'save'] );
+			$router->path('overview', 'get', [$controller, 'overview'] );
+			$router->path('save', 'post', [$controller, 'save'] );
 
 		});
 
 		// Lets also map the "/project" path to the controllers "list" action
-		$router->empty('read', [$controller, 'list']);
+		$router->pathEmpty('get', [$controller, 'list']);
+
+		$router->pathNotFound([$controller, 'error']);
 
 	}
 
@@ -88,6 +93,13 @@ class Controller_Project
 		return 'Saved project ' . $projectId;
 	}
 
+	public function error($router)
+	{
+		// Anything not found under "/project/xxxxx"
+		return 'You look lost. How can I help?';
+	}
+
+
 }
 ```
 
@@ -103,7 +115,7 @@ function authorize($info) {
 	}
 }
 
-$router = new \Doe\Router(['create', 'read', 'update', 'delete']);
+$router = new \Doe\Router(['get', 'post']);
 $router->filter(['authorize'], null, function($router) {
 	$router->path('restrictedarea', function ($router) {
 		return "Warning: Resticted area. Authorized personnel only.";

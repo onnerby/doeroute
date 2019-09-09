@@ -74,7 +74,7 @@ namespace Doe
 		{
 			$args = func_get_args();
 			$callback = array_pop($args);
-			$verbs = count($args) == 2 ? (is_array($args[1]) ? $args[1] : [$args[1]]) : false;
+			$verbs = (count($args) == 2 && $args[1] !== false) ? (is_array($args[1]) ? $args[1] : [$args[1]]) : false;
 			$filters = $this->collectFilters();
 			$subpaths = is_array($subpath) ? $subpath : [$subpath];
 
@@ -92,13 +92,23 @@ namespace Doe
 		 * @param callable $callback Callback executed if path match
 		 * @return Router for chaining
 		 */
-		public function empty() : Router
+		public function pathEmpty() : Router
 		{
-			$subpath = ':empty:';
 			$args = func_get_args();
 			$callback = array_pop($args);
-			$verbs = count($args) == 1 ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
-			return $this->path($subpath, $verbs, $callback);
+			$verbs = (count($args) == 1 && $args[0] !== false) ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
+			return $this->path(':empty:', $verbs, $callback);
+		}
+
+		/**
+		 * Add a possible callback for no path found
+		 *
+		 * @param callable $callback Callback executed if path match
+		 * @return Router for chaining
+		 */
+		public function pathNotFound($callback) : Router
+		{
+			return $this->path(':notfound:', $callback);
 		}
 
 		/**
@@ -113,7 +123,7 @@ namespace Doe
 		{
 			$args = func_get_args();
 			$callback = array_pop($args);
-			$verbs = count($args) == 2 ? (is_array($args[1]) ? $args[1] : [$args[1]]) : false;
+			$verbs = (count($args) == 2 && $args[1] !== false) ? (is_array($args[1]) ? $args[1] : [$args[1]]) : false;
 			$filters = $this->collectFilters();
 
 			$this->subpatterns[] = $this->createPath($callback, $verbs, $filters[0], $filters[1], $pattern);
@@ -207,10 +217,13 @@ namespace Doe
 		{
 			$fullpath = explode('/', trim($path, '/'));
 			$variables = [$this];
+			$subpath = '';
 
 			foreach ($fullpath as $subpath) {
+				$route = $this->subpaths[$subpath] ?? null;
 
-				if ($route = $this->subpaths[$subpath] ?? null) {
+				if ($route && $this->matchVerb($route, $verb)) {
+					$subpath = '';
 					if ($result = $this->callRoute($route, $verb, $variables)) {
 						return $result;
 					}
@@ -218,10 +231,11 @@ namespace Doe
 					// Check for patterns
 					foreach ($this->subpatterns as $route) {
 						$match = [];
-						if (preg_match($route->pattern, $subpath, $match)) {
+						if (preg_match($route->pattern, $subpath, $match) && $this->matchVerb($route, $verb)) {
 							array_shift($match);
 							$variables = array_merge($variables, $match);
 
+							$subpath = '';
 							if ($result = $this->callRoute($route, $verb, $variables)) {
 								return $result;
 							}
@@ -234,47 +248,56 @@ namespace Doe
 			}
 
 			// Path is empty, but there may still be ":empty:" paths
-			if ($route = $this->subpaths[':empty:'] ?? null) {
+			if ($subpath == '' && ($route = $this->subpaths[':empty:'] ?? null) && $this->matchVerb($route, $verb)) {
+				if ($result = $this->callRoute($route, $verb, $variables)) {
+					return $result;
+				}
+			}
+
+			// Path is not found
+			if ($route = $this->subpaths[':notfound:'] ?? null) {
 				if ($result = $this->callRoute($route, $verb, $variables)) {
 					return $result;
 				}
 			}
 
 			// No matches
-			throw new \Exception("No route", 404);
+			throw new \Exception("No route: " . print_r([$verb, $path], true), 404);
+		}
+
+		private function matchVerb($route, $verb)
+		{
+			return $route->verbs === false || in_array($verb, $route->verbs);
 		}
 
 		private function callRoute($route, $verb, $variables)
 		{
 			$this->subpaths = [];
 			$this->subpatterns = [];
-			if ($route->verbs === false || in_array($verb, $route->verbs)) {
 
-				$beforeInfo = $this->createFilterInfo($verb, null, null, $variables);
+			$beforeInfo = $this->createFilterInfo($verb, null, null, $variables);
 
-				// Check before filters
-				// Filters are run in order, and they don't know anything about each other.
-				// The first to return anything other than null aborts the sequence.
-				foreach ($route->beforeFilters as $filter) {
-					$result = call_user_func($filter, $beforeInfo);
-					if ($result !== null) {
-						return $result;
-					}
+			// Check before filters
+			// Filters are run in order, and they don't know anything about each other.
+			// The first to return anything other than null aborts the sequence.
+			foreach ($route->beforeFilters as $filter) {
+				$result = call_user_func($filter, $beforeInfo);
+				if ($result !== null) {
+					return $result;
 				}
-
-				$result = call_user_func_array($route->callback, $variables);
-
-				$afterInfo = $this->createFilterInfo($verb, null, null, $variables, $result);
-
-				// Check after filter
-				// After filters can modify the result in any way they see fit,
-				// but probably shouldn't return null (collides with not finding a route at all).
-				foreach ($route->afterFilters as $filter) {
-					$result = call_user_func($filter, $afterInfo);
-				}
-				return $result;
-
 			}
+
+			$result = call_user_func_array($route->callback, $variables);
+
+			$afterInfo = $this->createFilterInfo($verb, null, null, $variables, $result);
+
+			// Check after filter
+			// After filters can modify the result in any way they see fit,
+			// but probably shouldn't return null (collides with not finding a route at all).
+			foreach ($route->afterFilters as $filter) {
+				$result = call_user_func($filter, $afterInfo);
+			}
+			return $result;
 		}
 
 		/**
