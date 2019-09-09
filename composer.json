@@ -7,7 +7,7 @@
   ],
   "homepage": "https://github.com/onnerby/doeroute",
   "type": "library",
-  "license": "LGPL-2.1-or-later",
+  "license": "MIT",
   "authors": [
     {
       "name": "Daniel Önnerby"
