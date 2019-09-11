@@ -5,7 +5,8 @@ Don't make things more complicated than they needs to be.
 ## \Doe\Router
 The Doe\Router is a router where you build your routes using subpaths and closures. 
 The advantage is that the closures are only called if the subpath match which makes it SUPER FAST and easy to follow.
-It also makes it very easy to delegate specific paths to some kind of controller/action-pattern
+It also makes it very easy to delegate specific paths to some kind of controller/action-pattern.
+After I wrote Doe\Router I found https://github.com/nikic/FastRoute that is awesome and very similar to this router and probably a bit more felxible when it comes to multiple variables embedded in the path. They are similar in may ways, but the pattern is slightly different with both pros and cons.
 
 ## Installation
 ```
@@ -17,6 +18,8 @@ composer require onnerby/doeroute
 ```php
 $router = new \Doe\Router(['get', 'post']);
 $router->path('blog', function($router) {
+	// This closure is called if the route starts with /blog
+
 	$router->path('list', 'get', function ($router) {
 		// This is returned when route goes to "/blog/list"
 		return "List of all posts";
@@ -42,6 +45,7 @@ If you are building bigger webapps you may like to delegate routes to some kind 
 ```php
 // Main app
 $router = new \Doe\Router(['get', 'post']);
+// Route everything starting with /project to our \Controller_Project::route
 $router->path('project', ['Controller_Project', 'route']);
 
 ...
@@ -73,7 +77,7 @@ class Controller_Project
 
 	}
 
-	private function getProject($projectId) { /* Get the project somehow */ }
+	private function getProject($projectId) { /* Get the project somehow from a database? */ }
 
 	public function list($router)
 	{
@@ -104,10 +108,10 @@ class Controller_Project
 ```
 
 ### Filters
-You may also use filters to execute stuff before or after the routes.
+You may also use filters to execute stuff before the routes.
 ```php
 // In main app
-function authorize($info) {
+function authorize($router, $verb) {
 	// Authorize user somehow
 	if (!($user = getUser())) {
 		// Returning anything in "before"-filters will interrupt the route.
@@ -116,7 +120,7 @@ function authorize($info) {
 }
 
 $router = new \Doe\Router(['get', 'post']);
-$router->filter(['authorize'], null, function($router) {
+$router->filter('authorize', function($router) {
 	$router->path('restrictedarea', function ($router) {
 		return "Warning: Resticted area. Authorized personnel only.";
 	});

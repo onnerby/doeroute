@@ -43,6 +43,8 @@ namespace Doe
 		private $subpaths = [];
 		/** @var array Temporary possible subpatterns */
 		private $subpatterns = [];
+		/** @var callable */
+		public $pathSplitter = null;
 
 		/**
 		 * Create a router
@@ -53,6 +55,9 @@ namespace Doe
 		public function __construct($verbs = [])
 		{
 			$this->verbs = $verbs;
+			$this->pathSplitter = function ($path) {
+				return explode('/', trim($path, '/'));
+			};
 		}
 
 
@@ -75,11 +80,11 @@ namespace Doe
 			$args = func_get_args();
 			$callback = array_pop($args);
 			$verbs = (count($args) == 2 && $args[1] !== false) ? (is_array($args[1]) ? $args[1] : [$args[1]]) : false;
-			$filters = $this->collectFilters();
+			$filters = $this->filterContextStack;
 			$subpaths = is_array($subpath) ? $subpath : [$subpath];
 
 			foreach ($subpaths as $path) {
-				$this->subpaths[$path] = $this->createPath($callback, $verbs, $filters[0], $filters[1]);
+				$this->subpaths[$path] = $this->createPath($callback, $verbs, $filters);
 			}
 
 			return $this;
@@ -124,9 +129,9 @@ namespace Doe
 			$args = func_get_args();
 			$callback = array_pop($args);
 			$verbs = (count($args) == 2 && $args[1] !== false) ? (is_array($args[1]) ? $args[1] : [$args[1]]) : false;
-			$filters = $this->collectFilters();
+			$filters = $this->filterContextStack;
 
-			$this->subpatterns[] = $this->createPath($callback, $verbs, $filters[0], $filters[1], $pattern);
+			$this->subpatterns[] = $this->createPath($callback, $verbs, $filters, $pattern);
 			return $this;
 		}
 
@@ -143,60 +148,16 @@ namespace Doe
 		 *
 		 * Filters have filterInfo as argument.
 		 *
-		 * @param callable[] $before Filters to run before routes
-		 * @param callable[] $after Filters to run after routes
-		 * @param callable $callback Add your routes in this callback
+		 * @param callable $filterCallback Filters to run before routes
+		 * @param callable $routeCallback Add your routes in this callback
 		 * @return Router for chaining
 		 */
-		public function filter($before, $after, $callback) : Router
+		public function filter($filterCallback, $routeCallback) : Router
 		{
-			$this->filterContextStack[] = [$before, $after];
-			call_user_func($callback, $this);
+			$this->filterContextStack[] = $filterCallback;
+			call_user_func($routeCallback, $this);
 			array_pop($this->filterContextStack);
 			return $this;
-		}
-
-		/**
-		 * Mash stack into two arrays
-		 *
-		 * @return array
-		 */
-		private function collectFilters() : array
-		{
-			$out = [[], []];
-			foreach ($this->filterContextStack as $context) {
-				if (is_array($context[0])) { $out[0] = array_merge($out[0], $context[0]); }
-				if (is_array($context[1])) { $out[1] = array_merge($out[1], $context[1]); }
-			}
-			return $out;
-		}
-
-		/**
-		 * The argument to filters
-		 */
-		private function createFilterInfo($verb, $path, $matchedPath, $variables, $result = null)
-		{
-			return new class ($verb, $path, $matchedPath, $variables, $result) {
-				/** @var string */
-				public $verb;
-				/** @var string */
-				public $path;
-				/** @var string */
-				public $matchedPath;
-				/** @var array */
-				public $variables;
-				/** @var mixed */
-				public $result;
-
-				public function __construct($verb, $path, $matchedPath, $variables, $result)
-				{
-					$this->verb = $verb;
-					$this->path = $path;
-					$this->matchedPath = $matchedPath;
-					$this->variables = $variables;
-					$this->result = $result;
-				}
-			};
 		}
 
 		/*
@@ -215,8 +176,8 @@ namespace Doe
 		 */
 		public function route(string $verb, string $path) : string
 		{
-			$fullpath = explode('/', trim($path, '/'));
-			$variables = [$this];
+			$fullpath = call_user_func_array($this->pathSplitter, [$path]);
+			$variables = [];
 			$subpath = '';
 
 			foreach ($fullpath as $subpath) {
@@ -242,7 +203,8 @@ namespace Doe
 							continue 2;
 						}
 					}
-
+					// No match - take a break :)
+					break;
 				}
 
 			}
@@ -275,37 +237,26 @@ namespace Doe
 			$this->subpaths = [];
 			$this->subpatterns = [];
 
-			$beforeInfo = $this->createFilterInfo($verb, null, null, $variables);
-
-			// Check before filters
+			// Check filters
 			// Filters are run in order, and they don't know anything about each other.
 			// The first to return anything other than null aborts the sequence.
-			foreach ($route->beforeFilters as $filter) {
-				$result = call_user_func($filter, $beforeInfo);
+			foreach ($route->filters as &$filter) {
+				$result = call_user_func_array($filter, array_merge([$this, $verb], $variables));
 				if ($result !== null) {
 					return $result;
 				}
 			}
 
-			$result = call_user_func_array($route->callback, $variables);
-
-			$afterInfo = $this->createFilterInfo($verb, null, null, $variables, $result);
-
-			// Check after filter
-			// After filters can modify the result in any way they see fit,
-			// but probably shouldn't return null (collides with not finding a route at all).
-			foreach ($route->afterFilters as $filter) {
-				$result = call_user_func($filter, $afterInfo);
-			}
-			return $result;
+			// Call the route callable to get a result
+			return call_user_func_array($route->callback, array_merge([$this], $variables));
 		}
 
 		/**
 		 * Create path-object used to route.
 		 */
-		private function createPath($callback, $verbs, $beforeFilters, $afterFilters, $pattern = null)
+		private function createPath($callback, $verbs, $filters, $pattern = null)
 		{
-			return new class ($callback, $verbs, $beforeFilters, $afterFilters, $pattern) {
+			return new class ($callback, $verbs, $filters, $pattern) {
 				/** @var callable */
 				public $callback;
 				/** @var string[] */
@@ -313,16 +264,13 @@ namespace Doe
 				/** @var string */
 				public $pattern = null;
 				/** @var callable[] */
-				public $beforeFilters;
-				/** @var callable[] */
-				public $afterFilters;
+				public $filters;
 
-				public function __construct($callback, $verbs, $beforeFilters, $afterFilters, $pattern)
+				public function __construct($callback, $verbs, $filters, $pattern)
 				{
 					$this->callback = $callback;
 					$this->verbs = $verbs;
-					$this->beforeFilters = $beforeFilters;
-					$this->afterFilters = $afterFilters;
+					$this->filters = $filters;
 					$this->pattern = $pattern;
 				}
 			};
