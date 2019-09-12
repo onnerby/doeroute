@@ -23,8 +23,7 @@ namespace Doe
 	 *   });
 	 *
 	 * Filters can be run before or after the action. They are run in the order they are registered.
-	 * If any before-filter returns a value (not-null) processing is aborted and that value is the final result.
-	 * After-filters are run in a chain, each filter passing the result on to the next, and finally out the end.
+	 * If any filter returns a value (not-null) processing is aborted and that value is the final result.
 	 *
 	 * Filters can be nested!
 	 *
@@ -181,6 +180,7 @@ namespace Doe
 			$subpath = '';
 
 			foreach ($fullpath as $subpath) {
+				// First try to match the static subpaths
 				$route = $this->subpaths[$subpath] ?? null;
 
 				if ($route && $this->matchVerb($route, $verb)) {
@@ -189,7 +189,7 @@ namespace Doe
 						return $result;
 					}
 				} else {
-					// Check for patterns
+					// Second - Check for matching patterns
 					foreach ($this->subpatterns as $route) {
 						$match = [];
 						if (preg_match($route->pattern, $subpath, $match) && $this->matchVerb($route, $verb)) {

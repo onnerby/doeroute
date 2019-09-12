@@ -6,7 +6,7 @@ Don't make things more complicated than they needs to be.
 The Doe\Router is a router where you build your routes using subpaths and closures. 
 The advantage is that the closures are only called if the subpath match which makes it SUPER FAST and easy to follow.
 It also makes it very easy to delegate specific paths to some kind of controller/action-pattern.
-After I wrote Doe\Router I found [FastRoute](https://github.com/nikic/FastRoute) that is awesome and very similar to this router and probably a bit more felxible when it comes to multiple variables embedded in the path. They are similar in may ways, but the pattern is slightly different with both pros and cons.
+After I wrote Doe\Router I found [FastRoute](https://github.com/nikic/FastRoute) that is awesome and very similar to this router and probably a bit more flexible when it comes to multiple variables embedded in the path. They are similar in may ways, but the pattern is slightly different with both pros and cons.
 
 ## Installation
 ```
