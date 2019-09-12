@@ -6,7 +6,7 @@ Don't make things more complicated than they needs to be.
 The Doe\Router is a router where you build your routes using subpaths and closures. 
 The advantage is that the closures are only called if the subpath match which makes it SUPER FAST and easy to follow.
 It also makes it very easy to delegate specific paths to some kind of controller/action-pattern.
-After I wrote Doe\Router I found https://github.com/nikic/FastRoute that is awesome and very similar to this router and probably a bit more felxible when it comes to multiple variables embedded in the path. They are similar in may ways, but the pattern is slightly different with both pros and cons.
+After I wrote Doe\Router I found [FastRoute](https://github.com/nikic/FastRoute) that is awesome and very similar to this router and probably a bit more felxible when it comes to multiple variables embedded in the path. They are similar in may ways, but the pattern is slightly different with both pros and cons.
 
 ## Installation
 ```
@@ -127,3 +127,22 @@ $router->filter('authorize', function($router) {
 });
 
 ```
+
+# Why another router?
+Most routers I've used overcomplicate things.
+A router is used on the web for parsing the path of the URL to some kind of action. So lets just do that.
+
+A [URL](https://en.wikipedia.org/wiki/URL) is separated by a `/` and while most routers will define all routes for all paths at once, I decided to parse one segment at a time.
+I mean - you probably want to do something on each segment anyway in the end. For instance if I build the following routes:
+ - `/user` listing all users
+ - `/user/123` showing a users profile page
+ - `/user/123/badges` showing a users profile page with the users "badges"
+ - `/user/123/projects` showing a users profile page with the users projects
+
+etc, etc.
+You will not go directly to define `/user/[0-9]+/project` but will define the different segments down to the whole final path.
+
+The upside with this is that we don't need to define all routes for each request. Instead we look for the first segments and once that's found, we parse the next segment.
+There is also the advantage that everything inside `/user/[0-9]+` has its own callable where we can check access to the user before sending the route futher down the next segment.
+
+
