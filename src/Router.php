@@ -29,7 +29,7 @@ namespace Doe
 	 *
 	 * Route with {@see self::route()}:
 	 *
-	 *   $router->route($verb, $path)
+	 * $router->route($verb, $path)
 	 *
 	 */
 	class Router
