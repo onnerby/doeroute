@@ -17,7 +17,7 @@ namespace Doe
 	 *
 	 *   $router = new \Doe\Router(['read', 'create']);
 	 *   $router->path('path', function($router) {
-	 *       $router->pathVariable('/^([a-zA-Z0-9]+)$/', function ($router, $arg1) { 
+	 *       $router->pathVariable('/^([a-zA-Z0-9]+)$/', function ($router, $arg1) {
 	 *           $router->path('subpath2', ['read', 'create'], function ($router, $arg1) { return "This is route /path/" . $arg1 . "/subpath2"; });
 	 *       });
 	 *   });
@@ -206,7 +206,6 @@ namespace Doe
 					// No match - take a break :)
 					break;
 				}
-
 			}
 
 			// Path is empty, but there may still be ":empty:" paths
@@ -256,7 +255,7 @@ namespace Doe
 		 */
 		private function createPath($callback, $verbs, $filters, $pattern = null)
 		{
-			return new class ($callback, $verbs, $filters, $pattern) {
+			return new class($callback, $verbs, $filters, $pattern) {
 				/** @var callable */
 				public $callback;
 				/** @var string[] */
@@ -275,7 +274,6 @@ namespace Doe
 				}
 			};
 		}
-
 	}
 
 }
