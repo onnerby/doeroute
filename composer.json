@@ -25,9 +25,11 @@
   },
   "require-dev": {
     "phpunit/phpunit": "^8",
-    "friendsofphp/php-cs-fixer": "^2.15"
+    "friendsofphp/php-cs-fixer": "^2.15",
+    "nikic/fast-route": "^1.3"
   },
   "scripts": {
-    "test": "./vendor/bin/phpunit --bootstrap vendor/autoload.php --testdox tests"
+    "test": "./vendor/bin/phpunit --bootstrap vendor/autoload.php --testdox tests",
+    "benchmark": "php benchmark/fastroute.php"
   }
 }
