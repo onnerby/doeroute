@@ -185,7 +185,7 @@ namespace Doe
 
 				if ($route && $this->matchVerb($route, $verb)) {
 					$subpath = '';
-					if ($result = $this->callRoute($route, $verb, $variables)) {
+					if (!is_null($result = $this->callRoute($route, $verb, $variables))) {
 						return $result;
 					}
 				} else {
@@ -197,7 +197,7 @@ namespace Doe
 							$variables = array_merge($variables, $match);
 
 							$subpath = '';
-							if ($result = $this->callRoute($route, $verb, $variables)) {
+							if (!is_null($result = $this->callRoute($route, $verb, $variables))) {
 								return $result;
 							}
 							continue 2;
@@ -210,14 +210,14 @@ namespace Doe
 
 			// Path is empty, but there may still be ":empty:" paths
 			if ($subpath == '' && ($route = $this->subpaths[':empty:'] ?? null) && $this->matchVerb($route, $verb)) {
-				if ($result = $this->callRoute($route, $verb, $variables)) {
+				if (!is_null($result = $this->callRoute($route, $verb, $variables))) {
 					return $result;
 				}
 			}
 
 			// Path is not found
 			if ($route = $this->subpaths[':notfound:'] ?? null) {
-				if ($result = $this->callRoute($route, $verb, $variables)) {
+				if (!is_null($result = $this->callRoute($route, $verb, $variables))) {
 					return $result;
 				}
 			}
@@ -241,7 +241,7 @@ namespace Doe
 			// The first to return anything other than null aborts the sequence.
 			foreach ($route->filters as &$filter) {
 				$result = call_user_func_array($filter, array_merge([$this, $verb], $variables));
-				if ($result !== null) {
+				if (!is_null($result)) {
 					return $result;
 				}
 			}
