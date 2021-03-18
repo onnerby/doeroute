@@ -1,6 +1,17 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
+/***************************************************
+
+In this benchmark we try to build a realistic
+route for a pretty "normal" project.
+The benchmark tries to replicate a standard request
+by creating the routes for each loop and make one 
+random call to any of the routes each time.
+
+***************************************************/
+ 
+
 function getDoeRouter() {
 
 	$router = new \Doe\Router(['GET', 'POST']);
