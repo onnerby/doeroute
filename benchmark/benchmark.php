@@ -174,14 +174,20 @@ $paths = [
 	'/bok',
 ];
 
+
 $loops = 1000;
+
+// Generate at random sequence
+$seq = [];
+for ($i = 0; $i < $loops; $i++) {
+	$seq[] = $paths[array_rand($paths)];
+}
 
 ////////////////////////////////////////////////
 // Benchmark DoeRouter
 $s = microtime(true);
-for ($i = 0; $i < $loops; $i++) {
+foreach ($seq as $path) {
 	$router = getDoeRouter();
-	$path = $paths[array_rand($paths)];
 	$out = $router->route('GET', $path);
 	unset($router);
 }
@@ -193,9 +199,8 @@ $doeTime = $time;
 ////////////////////////////////////////////////
 // Benchmark FastRoute
 $s = microtime(true);
-for ($i = 0; $i < $loops; $i++) {
+foreach ($seq as $path) {
 	$router = getFastRouter();
-	$path = $paths[array_rand($paths)];
 	$routerInfo = $router->dispatch('GET', $path);
 	$out = $routerInfo[1]($routerInfo[2]);
 	unset($router);
@@ -208,11 +213,11 @@ echo "Speed improvement: " . round($time / $doeTime, 3) . " times\n\n";
 ////////////////////////////////////////////////
 // Benchmark Klein
 $s = microtime(true);
-for ($i = 0; $i < $loops; $i++) {
+foreach ($seq as $path) {
 	$router = getKleinRouter();
 	$request = new \Klein\Request([], [], [], [
 		'REQUEST_METHOD' => 'GET',
-		'REQUEST_URI' => $paths[array_rand($paths)],
+		'REQUEST_URI' => $path,
 	]);
 	$routerInfo = $router->dispatch($request, null, false);
 	unset($router);
@@ -225,9 +230,9 @@ echo "Speed improvement: " . round($time / $doeTime, 3) . " times\n\n";
 ////////////////////////////////////////////////
 // Benchmark Alto
 $s = microtime(true);
-for ($i = 0; $i < $loops; $i++) {
+foreach ($seq as $path) {
 	$router = getAltoRouter();
-	$routerInfo = $router->match($paths[array_rand($paths)], 'GET');
+	$routerInfo = $router->match($path, 'GET');
 	if( is_array($routerInfo) && is_callable($routerInfo['target'])) {
 		$out = call_user_func_array($routerInfo['target'], $routerInfo['params'] ); 
 	}
