@@ -51,7 +51,7 @@ namespace Doe
 		 * @param string[] $verbs ([])
 		 * @return self
 		 */
-		public function __construct($verbs = [])
+		public function __construct(array $verbs = [])
 		{
 			$this->verbs = $verbs;
 			$this->pathSplitter = function ($path) {
@@ -69,23 +69,17 @@ namespace Doe
 		/**
 		 * Add a possible path to the route
 		 *
-		 * @param string|array $subpath exact paths
+		 * @param string $subpath exact paths
 		 * @param string|array $verbs (optional)
 		 * @param callable $callback Callback executed if path match
 		 * @return Router for chaining
 		 */
-		public function path(string $subpath) : Router
+		public function path(string $subpath, ...$args) : Router
 		{
-			$args = func_get_args();
 			$callback = array_pop($args);
-			$verbs = (count($args) == 2 && $args[1] !== false) ? (is_array($args[1]) ? $args[1] : [$args[1]]) : false;
+			$verbs = ($args && $args[0] !== false) ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
 			$filters = $this->filterContextStack;
-			$subpaths = is_array($subpath) ? $subpath : [$subpath];
-
-			foreach ($subpaths as $path) {
-				$this->subpaths[$path] = $this->createPath($callback, $verbs, $filters);
-			}
-
+			$this->subpaths[$subpath] = $this->createPath($callback, $verbs, $filters);
 			return $this;
 		}
 
@@ -96,12 +90,9 @@ namespace Doe
 		 * @param callable $callback Callback executed if path match
 		 * @return Router for chaining
 		 */
-		public function pathEmpty() : Router
+		public function pathEmpty(...$args) : Router
 		{
-			$args = func_get_args();
-			$callback = array_pop($args);
-			$verbs = (count($args) == 1 && $args[0] !== false) ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
-			return $this->path(':empty:', $verbs, $callback);
+			return $this->path(':empty:', ...$args);
 		}
 
 		/**
@@ -123,11 +114,10 @@ namespace Doe
 		 * @param callable $callback Callback executed if path match
 		 * @return Router for chaining
 		 */
-		public function pathVariable(string $pattern) : Router
+		public function pathVariable(string $pattern, ...$args) : Router
 		{
-			$args = func_get_args();
 			$callback = array_pop($args);
-			$verbs = (count($args) == 2 && $args[1] !== false) ? (is_array($args[1]) ? $args[1] : [$args[1]]) : false;
+			$verbs = ($args && $args[0] !== false) ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
 			$filters = $this->filterContextStack;
 
 			$this->subpatterns[] = $this->createPath($callback, $verbs, $filters, $pattern);
@@ -173,7 +163,7 @@ namespace Doe
 		 * @param string $path
 		 * @return string
 		 */
-		public function route(string $verb, string $path) : string
+		public function route(string $verb, string $path) : ?string
 		{
 			$fullpath = call_user_func_array($this->pathSplitter, [$path]);
 			$variables = [];

@@ -78,6 +78,70 @@ function getFastRouter() {
 	return $dispatcher;
 }
 
+function getKleinRouter() {
+
+	$router = new \Klein\Klein();
+
+	$router->respond('/profile', function ($rq) { return 'empty'; });
+	$router->respond('/profile/overview', function ($rq) { return 'overview'; });
+	$router->respond('/profile/stuff', function ($rq) { return 'stuff'; });
+	$router->respond('/profile/list', function ($rq) { return 'list'; });
+	$router->respond('/profile/save', function ($rq) { return 'save'; });
+
+	$router->respond('/profile/[i:id]', function ($rq) { return 'var'; });
+	$router->respond('/profile/[i:id]/[a:var]', function ($rq) { return 'subproject'; });
+
+	$router->respond('/projekt', function ($rq) { return 'empty'; });
+	$router->respond('/projekt/overview', function ($rq) { return 'overview'; });
+	$router->respond('/projekt/stuff', function ($rq) { return 'stuff'; });
+	$router->respond('/projekt/list', function ($rq) { return 'list'; });
+	$router->respond('/projekt/save', function ($rq) { return 'save'; });
+
+	$router->respond('/projekt/[a:var]', function ($rq) { return 'var' . $rq->param('var'); });
+
+	$router->respond('/tjosan', function ($rq) { return 'tjosan'; });
+	$router->respond('/listings', function ($rq) { return 'listings'; });
+	$router->respond('/stuff', function ($rq) { return 'stuff'; });
+	$router->respond('/something', function ($rq) { return 'something'; });
+	$router->respond('/bok', function ($rq) { return 'bok'; });
+
+	$router->respond('/', function ($rq) { return 'tomt'; });
+
+	return $router;
+}
+
+function getAltoRouter() {
+
+	$router = new \AltoRouter();
+
+	$router->map('GET', '/profile', function () { return 'empty'; });
+	$router->map('GET', '/profile/overview', function () { return 'overview'; });
+	$router->map('GET', '/profile/stuff', function () { return 'stuff'; });
+	$router->map('GET', '/profile/list', function () { return 'list'; });
+	$router->map('GET', '/profile/save', function () { return 'save'; });
+
+	$router->map('GET', '/profile/[i:id]', function ($id) { return 'var'; });
+	$router->map('GET', '/profile/[i:id]/[a:var]', function ($id, $v) { return 'subproject'; });
+
+	$router->map('GET', '/projekt', function () { return 'empty'; });
+	$router->map('GET', '/projekt/overview', function () { return 'overview'; });
+	$router->map('GET', '/projekt/stuff', function () { return 'stuff'; });
+	$router->map('GET', '/projekt/list', function () { return 'list'; });
+	$router->map('GET', '/projekt/save', function () { return 'save'; });
+
+	$router->map('GET', '/projekt/[a:var]', function ($v) { return 'var' . $v; });
+
+	$router->map('GET', '/tjosan', function () { return 'tjosan'; });
+	$router->map('GET', '/listings', function () { return 'listings'; });
+	$router->map('GET', '/stuff', function () { return 'stuff'; });
+	$router->map('GET', '/something', function () { return 'something'; });
+	$router->map('GET', '/bok', function () { return 'bok'; });
+
+	$router->map('GET', '/', function () { return 'tomt'; });
+
+	return $router;
+}
+
 
 $paths = [
 	'/profile',
@@ -110,8 +174,10 @@ $paths = [
 	'/bok',
 ];
 
-$loops = 10000;
+$loops = 1000;
+
 ////////////////////////////////////////////////
+// Benchmark DoeRouter
 $s = microtime(true);
 for ($i = 0; $i < $loops; $i++) {
 	$router = getDoeRouter();
@@ -120,10 +186,12 @@ for ($i = 0; $i < $loops; $i++) {
 	unset($router);
 }
 $time = microtime(true) - $s;
-echo "Doe/Route: " . $time . "s " . round(1000000 * $time / $loops, 2) . "ns/req\n";
+echo "Doe/Route: " . $time . "s " . round(1000000 * $time / $loops, 2) . "ns/req\n\n";
 $doeTime = $time;
 
+
 ////////////////////////////////////////////////
+// Benchmark FastRoute
 $s = microtime(true);
 for ($i = 0; $i < $loops; $i++) {
 	$router = getFastRouter();
@@ -134,7 +202,39 @@ for ($i = 0; $i < $loops; $i++) {
 }
 $time = microtime(true) - $s;
 echo "FastRoute: " . $time . "s " . round(1000000 * $time / $loops, 2) . "ns/req\n";
+echo "Speed improvement: " . round($time / $doeTime, 3) . " times\n\n";
 
 
-echo "Speed improvement: " . round($time / $doeTime, 3) . " times\n";
+////////////////////////////////////////////////
+// Benchmark Klein
+$s = microtime(true);
+for ($i = 0; $i < $loops; $i++) {
+	$router = getKleinRouter();
+	$request = new \Klein\Request([], [], [], [
+		'REQUEST_METHOD' => 'GET',
+		'REQUEST_URI' => $paths[array_rand($paths)],
+	]);
+	$routerInfo = $router->dispatch($request, null, false);
+	unset($router);
+}
+$time = microtime(true) - $s;
+echo "Klein: " . $time . "s " . round(1000000 * $time / $loops, 2) . "ns/req\n";
+echo "Speed improvement: " . round($time / $doeTime, 3) . " times\n\n";
+
+
+////////////////////////////////////////////////
+// Benchmark Alto
+$s = microtime(true);
+for ($i = 0; $i < $loops; $i++) {
+	$router = getAltoRouter();
+	$routerInfo = $router->match($paths[array_rand($paths)], 'GET');
+	if( is_array($routerInfo) && is_callable($routerInfo['target'])) {
+		$out = call_user_func_array($routerInfo['target'], $routerInfo['params'] ); 
+	}
+	unset($router);
+}
+$time = microtime(true) - $s;
+echo "Alto: " . $time . "s " . round(1000000 * $time / $loops, 2) . "ns/req\n";
+echo "Speed improvement: " . round($time / $doeTime, 3) . " times\n\n";
+
 
