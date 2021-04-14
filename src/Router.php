@@ -77,9 +77,8 @@ namespace Doe
 		public function path(string $subpath, ...$args) : Router
 		{
 			$callback = array_pop($args);
-			$verbs = ($args && $args[0] !== false) ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
-			$filters = $this->filterContextStack;
-			$this->subpaths[$subpath] = $this->createPath($callback, $verbs, $filters);
+			$verbs = $args ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
+			$this->subpaths[$subpath] = $this->createPath($callback, $verbs, $this->filterContextStack);
 			return $this;
 		}
 
@@ -103,7 +102,8 @@ namespace Doe
 		 */
 		public function pathNotFound($callback) : Router
 		{
-			return $this->path(':notfound:', $callback);
+			$this->subpaths[':notfound:'] = $this->createPath($callback, false, $this->filterContextStack);
+			return $this;
 		}
 
 		/**
@@ -117,10 +117,9 @@ namespace Doe
 		public function pathVariable(string $pattern, ...$args) : Router
 		{
 			$callback = array_pop($args);
-			$verbs = ($args && $args[0] !== false) ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
-			$filters = $this->filterContextStack;
+			$verbs = $args ? (is_array($args[0]) ? $args[0] : [$args[0]]) : false;
 
-			$this->subpatterns[] = $this->createPath($callback, $verbs, $filters, $pattern);
+			$this->subpatterns[] = $this->createPath($callback, $verbs, $this->filterContextStack, $pattern);
 			return $this;
 		}
 
